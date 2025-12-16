@@ -20,10 +20,13 @@ MODEL_URL = os.environ.get("MODEL_URL")
 IMG_SIZE = (299, 299)
 
 if not os.path.exists(MODEL_FILENAME):
-    print("⬇️ Downloading model from Google Drive...")
-    gdown.download(MODEL_URL, MODEL_FILENAME, quiet=False)
-else:
-    print("✅ Model already exists. Skipping download.")
+    print("Downloading model from Google Drive...")
+    gdown.download(
+        url=MODEL_URL,
+        output=MODEL_FILENAME,
+        quiet=False,
+        fuzzy=True   
+    )
 
 # --------------------------------------------------
 # LOAD MODEL
