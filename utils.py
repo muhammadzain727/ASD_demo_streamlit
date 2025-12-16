@@ -1,43 +1,28 @@
 import os
-import gdown
 import tensorflow as tf
 import numpy as np
 import cv2
+from huggingface_hub import hf_hub_download
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.inception_v3 import preprocess_input
-
-# ---------------- CONFIG ----------------
-MODEL_FILENAME = "best_model_fold_5.h5"
-FILE_ID = "1ioAte2SuXX_X31id_Bxs5lDem_d8yq1u"
+from dotenv import load_dotenv
+load_dotenv()
+MODEL_FILENAME = os.environ.get("MODEL_FILENAME")
+REPO_ID = os.environ.get("REPO_ID")
 IMG_SIZE = (299, 299)
 
 # ---------------- DOWNLOAD MODEL ----------------
-if not os.path.exists(MODEL_FILENAME):
-    print("Downloading model from Google Drive...")
-    gdown.download(
-        id=FILE_ID,
-        output=MODEL_FILENAME,
-        quiet=False
-    )
-
-# ---------------- VERIFY FILE ----------------
-file_size_mb = os.path.getsize(MODEL_FILENAME) / (1024 * 1024)
-print(f"Model file size: {file_size_mb:.2f} MB")
-
-if file_size_mb < 10:
-    raise RuntimeError(
-        "Downloaded file is not a valid model. "
-        "Check Google Drive sharing permissions."
-    )
+MODEL_PATH = hf_hub_download(
+    repo_id=REPO_ID,
+    filename=MODEL_FILENAME
+)
 
 # ---------------- LOAD MODEL ----------------
 tf.keras.backend.clear_session()
 model = tf.keras.models.load_model(
-    MODEL_FILENAME,
+    MODEL_PATH,
     compile=False
 )
-
-print("Model loaded successfully")
 
 # ---------------- PREDICTION ----------------
 def predict_autism(img_path):
