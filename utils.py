@@ -1,103 +1,106 @@
-import tensorflow as tf
-import numpy as np
+import streamlit as st
 import cv2
-import matplotlib.pyplot as plt
+import numpy as np
 import os
-import gdown
-from tensorflow.keras.applications.inception_v3 import preprocess_input
-from tensorflow.keras.preprocessing import image
-from dotenv import load_dotenv
-load_dotenv()
-# MODEL_PATH = "best_model_fold_5.h5"
-MODEL_FILENAME = os.environ.get("MODEL_FILENAME")
+from PIL import Image
+from utils import explain_prediction
 
-# 🔽 Google Drive DIRECT download link
-# Example original link:
-# https://drive.google.com/file/d/1AbCdEfGhIjKlMnOP/view?usp=sharing
-# FILE ID = 1AbCdEfGhIjKlMnOP
-MODEL_URL = os.environ.get("MODEL_URL")
+st.set_page_config(
+    page_title="Autism Detection System",
+    page_icon="🧠",
+    layout="wide"
+)
 
-IMG_SIZE = (299, 299)
+st.sidebar.title("🧭 Navigation")
+page = st.sidebar.radio("Go to", ["🏠 Home", "🔍 Autism Detection"])
 
-if not os.path.exists(MODEL_FILENAME):
-    print("Downloading model from Google Drive...")
-    gdown.download(
-        url=MODEL_URL,
-        output=MODEL_FILENAME,
-        quiet=False,
-        fuzzy=True   
+if page == "🏠 Home":
+
+    st.markdown("""
+    # 🧠 Autism Spectrum Disorder Detection in Children through Facial Images
+    ### *Deep Learning Based Facial Pattern Analysis*
+    """)
+
+    st.markdown("---")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.markdown("""
+        ### 🎓 University
+        **University of Tartu**
+
+        ### 📘 Course
+        **Machine Learning**
+
+        ### 👨‍🏫 Course Instructor
+        **Dmytro Fishman**
+
+        ### 📌 Project Overview
+        This project applies **InceptionV3 Deep Learning Architecture**
+        with **Explainable AI (Grad-CAM)** to visualize facial regions
+        influencing autism-related predictions.
+
+        ⚠️ **Disclaimer:**  
+        This system is for **academic and research purposes only**  
+        and **must not** be considered a medical diagnostic tool.
+        """)
+
+    with col2:
+        st.markdown("""
+        ### 👨‍💻 Team Members
+        - Andrius Matšenas
+        - Anet Lello	 
+        - Muhammad Haris Irfan
+        - Muhammad Zain
+        """)
+
+    st.success("Use the sidebar to start Autism Detection →")
+
+elif page == "🔍 Autism Detection":
+
+    st.markdown("""
+    # 🔍 Autism Detection
+    Upload a child facial image to view prediction and explainability.
+    """)
+
+    uploaded_file = st.file_uploader(
+        "Upload Image",
+        type=["jpg", "png", "jpeg"]
     )
 
-# --------------------------------------------------
-# LOAD MODEL
-# --------------------------------------------------
-model = tf.keras.models.load_model(MODEL_FILENAME)
-print("🧠 Model loaded successfully")
+    if uploaded_file:
+        with open("temp.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
 
-# model = tf.keras.models.load_model(MODEL_PATH)
-print("Model loaded successfully")
+        label, prob, cam_image = explain_prediction("temp.jpg")
 
-def predict_autism(img_path):
-    img = image.load_img(img_path, target_size=IMG_SIZE)
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+        TARGET_W, TARGET_H = 350, 350
 
-    prob = model.predict(img_array)[0][0]
-    label = "Autistic" if prob >= 0.5 else "Non-Autistic"
+        # Resize original image
+        orig_img = Image.open(uploaded_file).convert("RGB")
+        orig_img = np.array(orig_img)
+        orig_img = cv2.resize(orig_img, (TARGET_W, TARGET_H))
 
-    return label, float(prob)
+        # Resize Grad-CAM image
+        cam_img = cv2.resize(cam_image, (TARGET_W, TARGET_H))
 
+        col1, col2 = st.columns(2)
 
-def make_gradcam_heatmap(img_array, model, last_conv_layer_name="mixed10"):
-    grad_model = tf.keras.models.Model(
-        inputs=model.inputs,
-        outputs=[
-            model.get_layer(last_conv_layer_name).output,
-            model.output
-        ]
-    )
+        with col1:
+            st.image(orig_img, caption="Original Image", width=TARGET_W)
 
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(img_array)
-        loss = predictions[0]
+        with col2:
+            st.image(cam_img, caption="Model Attention (Grad-CAM)", width=TARGET_W)
 
-    grads = tape.gradient(loss, conv_outputs)
+        st.markdown(f"""
+        ### 🧾 Prediction Result
+        **Prediction:** `{label}`  
+        **Confidence:** `{prob * 100:.2f}%`
+        """)
 
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-    conv_outputs = conv_outputs[0]
+        # 🧹 Automatically delete temp image
+        if os.path.exists("temp.jpg"):
+            os.remove("temp.jpg")
 
-    heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
-
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-    return heatmap.numpy()
-
-
-
-def overlay_gradcam(img_path, heatmap, alpha=0.4):
-    img = cv2.imread(img_path)
-    img = cv2.resize(img, IMG_SIZE)
-
-    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
-    heatmap = np.uint8(255 * heatmap)
-
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    superimposed_img = heatmap * alpha + img
-
-    return superimposed_img.astype(np.uint8)
-
-
-def explain_prediction(img_path):
-    img = image.load_img(img_path, target_size=IMG_SIZE)
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
-
-    label, prob = predict_autism(img_path)
-    heatmap = make_gradcam_heatmap(img_array, model)
-    cam_image = overlay_gradcam(img_path, heatmap)
-
-    return label, prob, cam_image
-
-
+    st.info("Explainable AI highlights regions influencing the model decision.")
