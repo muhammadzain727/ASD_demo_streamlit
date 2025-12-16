@@ -27,8 +27,7 @@ if page == "🏠 Home":
 
     with col1:
         st.markdown("""
-        ### 🎓 University
-        **University of Tartu**
+        ### 🎓 University of Tartu
 
         ### 📘 Course
         **Machine Learning**
