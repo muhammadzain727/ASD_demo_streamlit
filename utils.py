@@ -1,14 +1,7 @@
 import os
 
-# Must be set BEFORE importing tensorflow
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
-# Load .env locally (ignored on Streamlit Cloud)
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
+from dotenv import load_dotenv
+load_dotenv()
 
 import tensorflow as tf
 import numpy as np
@@ -21,7 +14,6 @@ from tensorflow.keras.applications.inception_v3 import preprocess_input
 MODEL_FILENAME = os.getenv("MODEL_FILENAME")
 REPO_ID = os.getenv("REPO_ID")
 
-# Fallback for Streamlit Cloud Secrets
 if MODEL_FILENAME is None or REPO_ID is None:
     try:
         import streamlit as st
@@ -29,8 +21,7 @@ if MODEL_FILENAME is None or REPO_ID is None:
         REPO_ID = st.secrets["REPO_ID"]
     except Exception:
         raise RuntimeError(
-            "MODEL_FILENAME and REPO_ID not found. "
-            "Set them in .env (local) or Streamlit Secrets (cloud)."
+            "MODEL_FILENAME / REPO_ID not found in env or Streamlit Secrets"
         )
 
 IMG_SIZE = (299, 299)
