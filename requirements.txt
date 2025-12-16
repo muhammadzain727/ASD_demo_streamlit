@@ -3,6 +3,4 @@ numpy==1.26.4
 opencv-python-headless==4.9.0.80
 pillow==10.2.0
 matplotlib==3.8.3
-gdown==5.2.0
-python-dotenv==1.2.1
-huggingface_hub==1.2.3
+huggingface-hub==0.23.4
