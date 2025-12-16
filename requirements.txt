@@ -1,8 +1,6 @@
-streamlit==1.32.2
-tensorflow==2.15.0
+tensorflow-cpu==2.15.0
 numpy==1.26.4
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 pillow==10.2.0
 matplotlib==3.8.3
 gdown==5.2.0
-rich==13.9.4
