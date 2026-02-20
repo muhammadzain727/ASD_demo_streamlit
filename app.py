@@ -48,10 +48,11 @@ if page == "🏠 Home":
     with col2:
         st.markdown("""
         ### 👨‍💻 Team Members
-        - Andrius Matšenas
-        - Anet Lello	 
-        - Muhammad Haris Irfan
         - Muhammad Zain
+        - Anet Lello	
+        - Andrius Matšenas 
+        - Muhammad Haris Irfan
+        
         """)
 
     st.success("Use the sidebar to start Autism Detection →")
